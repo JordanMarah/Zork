@@ -188,6 +188,9 @@ gameplay:
     bsr     amuletTalk
     bsr     town
     bsr     leaveShop
+    bsr     outsideEgreth
+    bsr     warriors
+    bsr     finalScene
     bsr     decorate
     rts
     
@@ -331,8 +334,6 @@ town:
     beq buy2Mercinaries
     cmp #2,D1
     beq buy1Mercinaries
-    cmp #3,D1
-    ;beq leaveTown
     rts
     
 buy1Mercinaries:
@@ -344,7 +345,7 @@ buy2Mercinaries:
    bsr display
    rts
 buy3Mercinaries:
-   lea mercinaries2,A1
+   lea mercinaries3,A1
    bsr display
    rts
 leaveShop:  
@@ -353,7 +354,87 @@ leaveShop:
     lea leaveTown,A1
     bsr display
     bsr user
-      
+    rts  
+ *-------------------------------------------------------
+*---Outside egreth------
+*------------------------------------------------------- 
+    
+outsideEgreth:
+     bsr endl
+    bsr decorate
+    lea atEgrethCastle,A1
+    bsr display
+    bsr user
+    cmp #1,D1
+    beq wizardDies
+    cmp #2,D1
+    beq wizardLives
+    rts
+wizardDies:
+   lea wizardDead,A1
+   bsr display  
+   rts
+wizardLives:
+   lea wizardAlive,A1
+   bsr display
+   rts
+   
+warriors:
+    bsr endl
+    bsr decorate
+    lea sendWarriors,A1
+    bsr display
+    bsr user
+    cmp #1,D1
+    beq warriorsDie
+    cmp #2,D1
+    beq youDie
+    rts
+warriorsDie:
+    
+     bsr endl
+    bsr decorate
+    lea warriorsDeath,A1
+    bsr display
+    bsr user
+    rts
+
+youDie:
+     bsr endl
+    bsr decorate
+    lea yourDeath,A1
+    bsr display
+    bsr user
+    bsr replay
+    
+     *-------------------------------------------------------
+*---Final scene------
+*------------------------------------------------------- 
+finalScene:
+    bsr endl
+    bsr decorate
+    lea alone,A1
+    bsr display
+    bsr user
+    cmp #1,D1
+    beq ded
+    cmp #2,D1
+    beq youWin
+    rts
+ded:  
+     bsr endl
+    bsr decorate
+    lea deathAgain,A1
+    bsr display
+    bsr user
+    rts
+youWin:
+       bsr endl
+    bsr decorate
+    lea winner,A1
+    bsr display
+    bsr user
+   rts
 *-------------------------------------------------------
 *-----------------Heads Up Display (Score)--------------
 * Retrieves the score from memory location
@@ -576,13 +657,125 @@ moveToTown dc.b 'You decide that you and your gang will move toward Egreth Castl
                         dc.b 'and weapons. You have 300 gold between you. A horse costs 100 and a'
                          dc.b  $0D,$0A
                          dc.b  'mercinary costs 100'
+                          dc.b  $0D,$0A
                          dc.b '"How many horses would you like?"',0 
 mercinaries1:       dc.b    'You decide to buy two horses and 1 mercinary',0  
 mercinaries2:       dc.b    'You buy a horse and two mercinaries',0 
 mercinaries3:       dc.b    'You dont want a horse? You buy 3 mercinarie',0 
 
 leaveTown     dc.b   'You all leave the town together and hope to get to Egreth Castle by night',0
-                                 
+
+atEgrethCastle      dc.b 'You get to the outskirts of Egreth Castle, the wizard informs everyone'
+                    dc.b  $0D,$0A
+                    dc.b   'that the castle is heavily guarded by skeletons and hobgoblins.'
+                     dc.b  $0D,$0A
+                     dc.b   'The castle looks old and decrepit and weak.'
+                      dc.b  $0D,$0A
+                      dc.b  'The warriors, wizard and cart driver wait for your orders'
+                       dc.b  $0D,$0A
+                       dc.b 'You decide to break off into groups, the warriors, the wizard'
+                        dc.b  $0D,$0A
+                        dc.b 'and cart driver, you shall go alone.'
+                         dc.b  $0D,$0A
+                         dc.b  'How will the wizard and cart driver go in?'
+                         dc.b '1. Loud and with weapons     2. Sneak',0 
+wizardDead
+                dc.b    'The wizard and the cart driver move towards the main gate of Egreth'
+                dc.b    $0D,$0A
+                dc.b    'The wizard smashes the gate open with a spell and the skeletons'
+                dc.b    $0D,$0A
+                dc.b    'and hobgoblins hear it and begin to frenzy. The wizard starts firing'
+                dc.b    $0D,$0A
+                dc.b    'balls of flames at the hobgoblins while the cart driver smashes'   
+                dc.b    $0D,$0A
+                dc.b    'the skeletons up with a warhammer, the skeletons surround the cart driver.'
+                dc.b    $0D,$0A
+                dc.b    'It becomes too much for him and they start to cut him up badly.'
+                dc.b    $0D,$0A
+                dc.b    'The wizard immediatly runs to him and tries a healing spell'  
+                dc.b    $0D,$0A
+                dc.b    'but its too late. The driver is dead.'
+                dc.b    $0D,$0A
+                dc.b    'The wizard is overburdened with enemies everywhere.'
+                dc.b    $0D,$0A
+                dc.b    'The enemies are just too much, you just hear the wizards screams'
+                dc.b    $0D,$0A
+                dc.b    'And then they stopped....',0
+wizardAlive     dc.b    'The wizard and the cart driver move towards the side walls of'
+                dc.b    $0D,$0A
+                dc.b    'Egreth. The wizard levitates up the wall with the cart driver'
+                dc.b    $0D,$0A
+                dc.b    'they get to the top to see small patrols of goblins.'
+                dc.b    $0D,$0A
+                dc.b    'They sneak around the walls and slowly take the goblins out'   
+                dc.b    $0D,$0A
+                dc.b    '1 by 1 eventually the wall patrol is all but dead and the wizard'
+                dc.b    $0D,$0A
+                dc.b    'sends the signal to you that its all clear.',0
+sendWarriors:    dc.b    '1. Send warriors in main gate and you go to wizard'
+                dc.b    $0D,$0A
+                dc.b    '2. Send warriors around back and you go through main gate',0   
+yourDeath       dc.b    'You move towards the main gate, knowing its full of monsters'
+                 dc.b    $0D,$0A
+                dc.b    'You see a group of 3 goblins and charge at them with your sword'  
+                dc.b    $0D,$0A
+                dc.b    'with one swift swing, you decapitate all three of them'
+                dc.b    $0D,$0A
+                dc.b    'A group of skeletons spot you and start firing bows at you'
+                dc.b    $0D,$0A
+                dc.b    'with so much focus, you dodge the arrows,'
+                dc.b    $0D,$0A
+                dc.b    'Unfortunatly, you didnt see the fourth goblin and he creeps'
+                  dc.b    $0D,$0A
+                dc.b    'up behind you and puts a dagger in your back...unlucky',0
+warriorsDeath    dc.b    'The warriors move toward the gate, knowing its full of monsters'
+                 dc.b    $0D,$0A
+                dc.b    'They see a group of goblins and charge at them with their swords'  
+                dc.b    $0D,$0A
+                dc.b    'They take out the goblins with ease.'
+                dc.b    $0D,$0A
+                dc.b    'A group of skeletons spot them and start firing bows at them'
+                dc.b    $0D,$0A
+                dc.b    'Unfortunatly, they arent agile or cunning enough'
+                  dc.b    $0D,$0A
+                dc.b    'to avoid the incoming bows and each of them die',0 
+alone    dc.b    'You make it inside the castle and all is silent, you are alone'
+                 dc.b    $0D,$0A
+                dc.b    'You look around and see the main living quarters'  
+                dc.b    $0D,$0A
+                dc.b    'right down the hall...you approach it'
+                dc.b    $0D,$0A
+                dc.b    'You see a shadow in the corner of the room and you enter'
+                dc.b    $0D,$0A
+                dc.b    'Standing in front of you is the evil wizard'
+                  dc.b    $0D,$0A
+                dc.b    'He has his back turned and you quietly equip your bow'
+                  dc.b    $0D,$0A
+                dc.b    '1. Headshot'
+                  dc.b    $0D,$0A
+                dc.b    '2. Through heart',0 
+deathAgain       dc.b    'He moves just as you take your shot from across the room'
+                 dc.b    $0D,$0A
+                dc.b    'You missed.'  
+                dc.b    $0D,$0A
+                dc.b    'the wizard swing around and you see the amulet on his neck'
+                dc.b    $0D,$0A
+                dc.b    'You drop your bow and run at him with a sword,'
+                dc.b    $0D,$0A
+                dc.b    'he raises his staff and fires a single shot'
+                dc.b    $0D,$0A
+                dc.b    'Unfortunatly, the shot caught you right in the heart'
+                  dc.b    $0D,$0A
+                dc.b    'You die',0 
+winner       dc.b    'You aim right for the back of his heart and with one release'
+                 dc.b    $0D,$0A
+                dc.b    'He drops to the floor and the amulet rolls off his neck'  
+                dc.b    $0D,$0A
+                dc.b    'You approach him and pick up the amulet.'
+                dc.b    $0D,$0A
+                dc.b    'You have defeated the wizard'
+                dc.b    $0D,$0A
+                dc.b    'You win', 0                         
 feed_msg:       dc.b    'Feed load (each horse needs at least 100 units of feed)'
                 dc.b    $0D,$0A
                 dc.b    'Enter feed load : ',0
@@ -618,6 +811,7 @@ health:     ds.w    1
 score:      ds.w    1 reserve space for score
 
     end start
+
 
 
 
