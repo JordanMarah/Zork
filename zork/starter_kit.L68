@@ -1,0 +1,724 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 16/04/2018 10:48:42
+
+00001000                             1      org $1000
+00001000                             2  
+00001000                             3  *-------------------------------------------------------
+00001000                             4  *Choose to be Evil Wizard or New Romancers
+00001000                             5  *-------------------------------------------------------
+00001000                             6  
+00001000                             7  *-------------------------------------------------------
+00001000                             8  *Validation values to be used, modify as needed
+00001000                             9  *Add additional validation values as required
+00001000                            10  *-------------------------------------------------------
+00001000  =00000000                 11  exit        EQU 0      used to exit assembly program
+00001000  =00000064                 12  min_feed    EQU 100    min feed requirement
+00001000  =00000001                 13  min_horses  EQU 1      min number of horses
+00001000  =00000009                 14  max_horses  EQU 9      max number of horses
+00001000  =00000006                 15  min_soldier EQU 6      min soldiers
+00001000  =00000001                 16  min_charge  EQU 1      min rate of fuel use based of speed (oats for horses)
+00001000  =00000005                 17  max_charge  EQU 5      max rate e.g. Flank       
+00001000  =00000005                 18  hit_point   EQU 5      points accumilated on castle (objective) strike
+00001000  =00000008                 19  miss_point  EQU 8      points deducted for ordinace miss
+00001000                            20  
+00001000  =00000064                 21  mine_loc    EQU 100    example for a hit
+00001000                            22  
+00001000                            23  
+00001000                            24  *Start of Game
+00001000                            25  start:
+00001000                            26      ;move.b  #100,$4000 put score/health in memory location $4000
+00001000                            27      ;lea     $4000,A3   assign address A3 to that memory location
+00001000                            28  
+00001000                            29  
+00001000  6100 2008                 30      bsr     welcome    branch to the welcome subroutine
+00001004                            31      ;bsr     input      branch to the input subroutine
+00001004  6100 1FFA                 32      bsr     game       branch to the game subroutine
+00001008                            33  *Game loop
+00003000                            34      org     $3000      the rest of the program is to be located from 3000 onwards
+00003000                            35  
+00003000                            36  *-------------------------------------------------------
+00003000                            37  *-------------------Game Subroutine---------------------
+00003000                            38  *-------------------------------------------------------
+00003000                            39  game:
+00003000  6100 0034                 40      bsr     gameloop   branch to gameloop subroutine
+00003004  4E75                      41      rts                return from game: subroutine
+00003006                            42            
+00003006                            43  end:
+00003006  FFFF FFFF                 44      simhalt
+0000300A                            45  
+0000300A                            46  *-------------------------------------------------------
+0000300A                            47  *-------------------Welcome Subroutine------------------
+0000300A                            48  *-------------------------------------------------------
+0000300A                            49  welcome:
+0000300A  6100 0402                 50      bsr     endl            branch to endl subroutine
+0000300E  43F9 00003427             51      lea     welcome_msg,A1  assign message to address register A1
+00003014  103C 000E                 52      move.b  #14,D0          move literal 14 to DO
+00003018  4E4F                      53      trap    #15             trap and interpret value in D0
+0000301A  6100 03F2                 54      bsr     endl            branch to endl subroutine
+0000301E  4E75                      55      rts                     return from welcome: subroutine
+00003020                            56  
+00003020                            57  *-------------------------------------------------------
+00003020                            58  *---------Gameplay Input Values Subroutine--------------
+00003020                            59  *-------------------------------------------------------    
+00003020                            60  input:
+00003020  6100 0072                 61      bsr     feed            branch to feed input subroutine
+00003024  6100 0088                 62      bsr     horses          branch to ship input subroutine
+00003028  6100 009E                 63      bsr     rate            branch to rate (charging speed) input subroutine
+0000302C  6100 00B4                 64      bsr     distance        branch to mission distance/location input subroutine
+00003030  6100 00CA                 65      bsr     soldiers        branch to soldiers input subroutine
+00003034  4E75                      66      rts
+00003036                            67  
+00003036                            68  *-------------------------------------------------------
+00003036                            69  *----------------Gameloop (main loop)-------------------
+00003036                            70  *------------------------------------------------------- 
+00003036                            71  gameloop:
+00003036  6100 0028                 72      bsr     update          branch to update game subroutine 
+0000303A  6100 03A4                 73      bsr     clear_screen    clears the screen         
+0000303E  6100 003A                 74      bsr     draw            branch to draw screen subroutine
+00003042  6100 039C                 75      bsr     clear_screen    clears the screen
+00003046  6100 00CE                 76      bsr     gameplay        branch to gameplay subroutine
+0000304A  6100 0394                 77      bsr     clear_screen    clears the screen
+0000304E  6100 02DE                 78      bsr     hud             branch to display HUD subroutine
+00003052  6100 038C                 79      bsr     clear_screen    clears the screen
+00003056  6100 0394                 80      bsr     replay          branch to replay game subroutine
+0000305A  6100 0384                 81      bsr     clear_screen    clears the screen
+0000305E  4E75                      82      rts                     return from gameloop: subroutine
+00003060                            83  
+00003060                            84  *-------------------------------------------------------
+00003060                            85  *---------------Update Mission Progress-----------------
+00003060                            86  *  Move to battle location, engage enemy, fire and take
+00003060                            87  *  fire, complete mission and return to base
+00003060                            88  *------------------------------------------------------- 
+00003060                            89  update:
+00003060  6100 03AC                 90      bsr     endl            print a CR and LF
+00003064  6100 035C                 91      bsr     decorate        decorate with dots using a loop
+00003068  43F9 000044E5             92      lea     update_msg,A1   
+0000306E  103C 000E                 93      move.b  #14,D0
+00003072  4E4F                      94      trap    #15
+00003074  6100 034C                 95      bsr     decorate
+00003078  4E75                      96      rts
+0000307A                            97  *-------------------------------------------------------
+0000307A                            98  *---------------Draw Mission Updates--------------------
+0000307A                            99  * Draw the game progress information, status regarding
+0000307A                           100  * mission
+0000307A                           101  *------------------------------------------------------- 
+0000307A                           102  draw:
+0000307A  6100 0392                103      bsr     endl
+0000307E  6100 0342                104      bsr     decorate
+00003082  43F9 000044F7            105      lea     draw_msg,A1
+00003088  103C 000E                106      move.b  #14,D0
+0000308C  4E4F                     107      trap    #15
+0000308E  6100 0332                108      bsr     decorate
+00003092  4E75                     109      rts
+00003094                           110  *-------------------------------------------------------
+00003094                           111  *-----------------------Horse feed-----------------------
+00003094                           112  * Input the feed load for each horse. Feed costs money
+00003094                           113  * For an advanced mark you need to manage this resource
+00003094                           114  *------------------------------------------------------- 
+00003094                           115  feed:
+00003094  6100 0378                116      bsr     endl
+00003098  6100 0328                117      bsr     decorate
+0000309C  43F9 000042CB            118      lea     feed_msg,A1
+000030A2  103C 000E                119      move.b  #14,D0
+000030A6  4E4F                     120      trap    #15
+000030A8  6100 0318                121      bsr     decorate
+000030AC  4E75                     122      rts
+000030AE                           123  
+000030AE                           124  *-------------------------------------------------------
+000030AE                           125  *--------------------Horses Inventory---------------------
+000030AE                           126  * Number of horses to be allocated to a mission 
+000030AE                           127  *------------------------------------------------------- 
+000030AE                           128  horses:
+000030AE  6100 035E                129      bsr     endl
+000030B2  6100 030E                130      bsr     decorate
+000030B6  43F9 00004317            131      lea     horses_msg,A1
+000030BC  103C 000E                132      move.b  #14,D0
+000030C0  4E4F                     133      trap    #15
+000030C2  6100 02FE                134      bsr     decorate
+000030C6  4E75                     135      rts
+000030C8                           136  
+000030C8                           137  *-------------------------------------------------------
+000030C8                           138  *-------------------Horse(s) Charge Speed---------------
+000030C8                           139  * horses speed to and from a mission
+000030C8                           140  *------------------------------------------------------- 
+000030C8                           141  rate:
+000030C8  6100 0344                142      bsr     endl
+000030CC  6100 02F4                143      bsr     decorate
+000030D0  43F9 0000432B            144      lea     rate_msg,A1
+000030D6  103C 000E                145      move.b  #14,D0
+000030DA  4E4F                     146      trap    #15
+000030DC  6100 02E4                147      bsr     decorate
+000030E0  4E75                     148      rts
+000030E2                           149  
+000030E2                           150  *-------------------------------------------------------
+000030E2                           151  *------------------Mission Distance---------------------
+000030E2                           152  * Distance to battle location
+000030E2                           153  *------------------------------------------------------- 
+000030E2                           154  distance:
+000030E2  6100 032A                155      bsr     endl
+000030E6  6100 02DA                156      bsr     decorate
+000030EA  43F9 000043A3            157      lea     distance_msg,A1
+000030F0  103C 000E                158      move.b  #14,D0
+000030F4  4E4F                     159      trap    #15
+000030F6  6100 02CA                160      bsr     decorate
+000030FA  4E75                     161      rts
+000030FC                           162  
+000030FC                           163  *-------------------------------------------------------
+000030FC                           164  *-----------------------Soldiers----------------------
+000030FC                           165  * Number of soldiers
+000030FC                           166  *-------------------------------------------------------   
+000030FC                           167  soldiers:
+000030FC  6100 0310                168      bsr     endl
+00003100  6100 02C0                169      bsr     decorate
+00003104  43F9 00004449            170      lea     soldiers_msg,A1
+0000310A  103C 000E                171      move.b  #14,D0
+0000310E  4E4F                     172      trap    #15
+00003110  6100 02B0                173      bsr     decorate
+00003114  4E75                     174      rts
+00003116                           175  
+00003116                           176  *-------------------------------------------------------
+00003116                           177  *---Game Play (Mission Progress, Battle Maneuvers)------
+00003116                           178  *------------------------------------------------------- 
+00003116                           179  gameplay:
+00003116  6100 02F6                180      bsr     endl
+0000311A  6100 02A6                181      bsr     decorate
+0000311E                           182      ;lea     gameplay_msg,A1
+0000311E                           183     ; move.b  #14,D0
+0000311E                           184     ; trap    #15
+0000311E  6100 001C                185      bsr     opening
+00003122  6100 00FE                186      bsr     returnToCamp
+00003126  6100 0132                187      bsr     littleGirl
+0000312A  6100 017C                188      bsr     amuletTalk
+0000312E  6100 0190                189      bsr     town
+00003132  6100 01E4                190      bsr     leaveShop
+00003136  6100 028A                191      bsr     decorate
+0000313A  4E75                     192      rts
+0000313C                           193      
+0000313C                           194   *--------------------------
+0000313C                           195   *Opening
+0000313C                           196   *-------------
+0000313C                           197   opening:
+0000313C  183C 0064                198      move.b  #100,D4
+00003140  6100 02CC                199      bsr     endl
+00003144  6100 027C                200      bsr     decorate
+00003148  43F9 000034C9            201      lea     opening_msg,A1
+0000314E  6100 023C                202      bsr     display
+00003152  6100 026E                203      bsr     decorate
+00003156  43F9 000035E0            204      lea     opening_question,A1
+0000315C  6100 024A                205      bsr     user
+00003160  B27C 0001                206      cmp     #1,D1
+00003164  6700 000C                207      beq     field
+00003168  B27C 0002                208      cmp     #2,D1
+0000316C  6700 002A                209      beq     lake
+00003170  4E75                     210      rts
+00003172                           211   field:
+00003172  6100 029A                212      bsr     endl
+00003176  6100 024A                213      bsr     decorate
+0000317A  43F9 000035F5            214      lea     field_para,A1
+00003180  6100 020A                215      bsr     display
+00003184  6100 0222                216      bsr     user
+00003188  B27C 0001                217      cmp     #1,D1
+0000318C  6700 0030                218      beq     goblinattack
+00003190  B27C 0002                219      cmp     #2,D1
+00003194  6700 0044                220      beq     goblinsneak
+00003198                           221     
+00003198                           222      
+00003198                           223   
+00003198                           224   lake:
+00003198  6100 0274                225       bsr     endl
+0000319C  6100 0224                226      bsr     decorate
+000031A0  43F9 000036FD            227      lea     lake_para,A1
+000031A6  6100 01E4                228       bsr     display
+000031AA  6100 01FC                229      bsr     user
+000031AE  B27C 0001                230      cmp     #1,D1
+000031B2  6700 003C                231      beq     skeletonattack
+000031B6  B27C 0002                232      cmp     #2,D1
+000031BA  6700 0050                233      beq     skeletonsneak
+000031BE                           234     
+000031BE                           235  goblinattack:
+000031BE  6100 024E                236       bsr     endl
+000031C2  6100 01FE                237      bsr     decorate
+000031C6  43F9 000037FF            238      lea     goblin_attack,A1
+000031CC  6100 01BE                239      bsr     display
+000031D0                           240   
+000031D0  0645 000A                241      add     #10,D5
+000031D4  0444 000A                242      sub     #10,D4
+000031D8  4E75                     243      rts
+000031DA                           244  
+000031DA                           245  goblinsneak:
+000031DA  6100 0232                246      bsr     endl
+000031DE  6100 01E2                247      bsr     decorate
+000031E2  43F9 0000399B            248      lea     goblin_sneak,A1
+000031E8  6100 01A2                249       bsr     display
+000031EC                           250   
+000031EC  5A45                     251      add     #5,D5
+000031EE  4E75                     252      rts
+000031F0                           253  skeletonattack:
+000031F0  6100 021C                254       bsr     endl
+000031F4  6100 01CC                255      bsr     decorate
+000031F8  43F9 000038CB            256      lea     skeleton_attack,A1
+000031FE                           257   
+000031FE  6100 018C                258      bsr     display
+00003202  0645 000A                259      add     #10,D5
+00003206  0444 000A                260      sub     #10,D4
+0000320A  4E75                     261      rts
+0000320C                           262  skeletonsneak:
+0000320C  6100 0200                263      bsr     endl
+00003210  6100 01B0                264      bsr     decorate
+00003214  43F9 00003A55            265      lea     skeleton_sneak,A1
+0000321A                           266     
+0000321A  6100 0170                267      bsr     display
+0000321E  5A45                     268      add     #5,D5
+00003220  4E75                     269      rts
+00003222                           270      
+00003222                           271   *-------------------------------------------------------
+00003222                           272  *---Scene2------
+00003222                           273  *------------------------------------------------------- 
+00003222                           274  returnToCamp:
+00003222  6100 010A                275      bsr     hud
+00003226  6100 01E6                276      bsr     endl
+0000322A  6100 0196                277      bsr     decorate
+0000322E  43F9 00003B11            278      lea     return_camp,A1
+00003234  6100 0156                279      bsr     display
+00003238  43F9 00003C15            280      lea     young_girl,A1
+0000323E  6100 014C                281      bsr     display
+00003242  6100 01CA                282      bsr     endl
+00003246  6100 017A                283      bsr     decorate
+0000324A  43F9 00003C3C            284      lea     young_girl_response,A1
+00003250  6100 013A                285      bsr     display
+00003254  6100 0152                286      bsr     user
+00003258  4E75                     287      rts
+0000325A                           288  littleGirl:
+0000325A  43F9 00003D24            289      lea     young_girl_leaving,A1
+00003260  6100 012A                290      bsr     display
+00003264  6100 0142                291      bsr     user
+00003268  B27C 0001                292      cmp     #1,D1
+0000326C  6700 000A                293      beq     leave
+00003270  B27C 0002                294      cmp     #2,D1
+00003274  6700 001A                295      beq     stay
+00003278                           296  leave:
+00003278  6100 0194                297      bsr     endl
+0000327C  6100 0144                298      bsr     decorate
+00003280  43F9 00003DBA            299      lea     girlLeaves,A1
+00003286  6100 0104                300      bsr     display
+0000328A  6100 011C                301      bsr     user
+0000328E  4E75                     302      rts
+00003290                           303  stay:
+00003290  6100 017C                304       bsr    endl
+00003294  6100 012C                305      bsr     decorate
+00003298  43F9 00003DDB            306      lea     girlStay,A1
+0000329E  6100 00EC                307      bsr     display
+000032A2  6100 0104                308      bsr     user
+000032A6  4E75                     309      rts
+000032A8                           310  amuletTalk:
+000032A8  6100 0164                311      bsr endl
+000032AC  6100 0114                312      bsr decorate
+000032B0  43F9 00003E29            313      lea askWizardAndPrincess,A1
+000032B6  6100 00D4                314      bsr display
+000032BA  6100 00EC                315      bsr     user
+000032BE  4E75                     316      rts
+000032C0                           317      
+000032C0                           318   *-------------------------------------------------------
+000032C0                           319  *---Town------
+000032C0                           320  *------------------------------------------------------- 
+000032C0                           321  
+000032C0                           322  town:
+000032C0  6100 014C                323      bsr endl
+000032C4  6100 00FC                324      bsr decorate
+000032C8  43F9 00004042            325      lea moveToTown,A1
+000032CE  6100 00BC                326      bsr display
+000032D2  6100 00D4                327      bsr user
+000032D6  B27C 0000                328      cmp #0,D1
+000032DA  6700 0030                329      beq buy3Mercinaries
+000032DE  B27C 0001                330      cmp #1,D1
+000032E2  6700 001C                331      beq buy2Mercinaries
+000032E6  B27C 0002                332      cmp #2,D1
+000032EA  6700 0008                333      beq buy1Mercinaries
+000032EE  B27C 0003                334      cmp #3,D1
+000032F2                           335      ;beq leaveTown
+000032F2  4E75                     336      rts
+000032F4                           337      
+000032F4                           338  buy1Mercinaries:
+000032F4  43F9 00004204            339      lea mercinaries1,A1
+000032FA  6100 0090                340      bsr display
+000032FE  4E75                     341      rts
+00003300                           342  buy2Mercinaries:
+00003300  43F9 00004231            343     lea mercinaries2,A1
+00003306  6100 0084                344     bsr display
+0000330A  4E75                     345     rts
+0000330C                           346  buy3Mercinaries:
+0000330C  43F9 00004231            347     lea mercinaries2,A1
+00003312  6100 0078                348     bsr display
+00003316  4E75                     349     rts
+00003318                           350  leaveShop:  
+00003318  6100 00F4                351      bsr endl
+0000331C  6100 00A4                352      bsr decorate
+00003320  43F9 00004281            353      lea leaveTown,A1
+00003326  6100 0064                354      bsr display
+0000332A  6100 007C                355      bsr user
+0000332E                           356        
+0000332E                           357  *-------------------------------------------------------
+0000332E                           358  *-----------------Heads Up Display (Score)--------------
+0000332E                           359  * Retrieves the score from memory location
+0000332E                           360  *-------------------------------------------------------   
+0000332E                           361  hud:
+0000332E                           362  
+0000332E  6100 00DE                363      bsr     endl
+00003332  6100 008E                364      bsr     decorate
+00003336  43F9 00004543            365      lea     hud_msg,A1
+0000333C  103C 000E                366      move.b  #14,D0
+00003340  4E4F                     367      trap    #15
+00003342  1205                     368      move.b  D5,D1     retrieve the value A5 point to and move to D1
+00003344  103C 0003                369      move.b  #3,D0       move literal 3 to D0
+00003348  4E4F                     370      trap    #15         intrepret value in D0, which 3 which displays D1
+0000334A  43F9 0000454D            371      lea     hud_msg2,A1
+00003350  103C 000E                372      move.b  #14,D0
+00003354  4E4F                     373      trap    #15
+00003356  1204                     374      move.b  D4,D1     retrieve the value A3 point to and move to D1
+00003358  103C 0003                375      move.b  #3,D0       move literal 3 to D0
+0000335C  4E4F                     376      trap    #15   
+0000335E  6100 0062                377      bsr     decorate
+00003362  4E75                     378      rts
+00003364                           379  
+00003364                           380  *-------------------------------------------------------
+00003364                           381  *-----------------------Taking Fire---------------------
+00003364                           382  * This could be used for collision detection, if 
+00003364                           383  *-------------------------------------------------------
+00003364                           384  collision:
+00003364  123C 0064                385      move.b  #mine_loc,D1
+00003368  B27C 0064                386      cmp     #100,D1 is( x == 100)?
+0000336C  6600 0010                387      bne     collision_miss if x is equal to 100, then hit
+00003370                           388  collision_hit:
+00003370                           389      *hit
+00003370  43F9 00004505            390      lea     hit_msg,A1
+00003376  303C 000E                391      move    #14,D0
+0000337A  4E4F                     392      trap    #15
+0000337C  4E75                     393      rts
+0000337E                           394      
+0000337E                           395  collision_miss:
+0000337E                           396      *miss
+0000337E  43F9 0000450D            397      lea     miss_msg,A1
+00003384  303C 000E                398      move    #14,D0
+00003388  4E4F                     399      trap    #15
+0000338A  4E75                     400      rts
+0000338C                           401  display:    
+0000338C  303C 000E                402      MOVE    #14,D0
+00003390  4E4F                     403      TRAP    #15
+00003392  48E7 8040                404      MOVEM.L D0/A1,-(A7)
+00003396  303C 000E                405      MOVE    #14,D0
+0000339A  43F9 00003424            406      LEA crlf,A1
+000033A0  4E4F                     407      TRAP    #15
+000033A2  4CDF 0201                408      MOVEM.L (A7)+,D0/A1
+000033A6  4E75                     409      RTS
+000033A8                           410  user:
+000033A8  103C 0004                411      move.b  #4,D0
+000033AC  4E4F                     412      trap    #15
+000033AE                           413  *-------------------------------------------------------
+000033AE                           414  *--------------------------Loop-------------------------
+000033AE                           415  *-------------------------------------------------------
+000033AE                           416  loop:
+000033AE  163C 0005                417      move.b  #5, D3 loop counter D3=5
+000033B2                           418  next:
+000033B2  43F9 00004513            419      lea     loop_msg,A1
+000033B8  103C 000E                420      move.b  #14,D0
+000033BC  4E4F                     421      trap    #15
+000033BE  5343                     422      sub     #1,D3   decrement loop counter
+000033C0  66F0                     423      bne     next    repeat until D0=0
+000033C2                           424  
+000033C2                           425  *-------------------------------------------------------
+000033C2                           426  *------------------Screen Decoration--------------------
+000033C2                           427  *-------------------------------------------------------
+000033C2                           428  decorate:
+000033C2  163C 003C                429      move.b  #60, D3
+000033C6  6100 0046                430      bsr     endl
+000033CA                           431  out:
+000033CA  43F9 00004513            432      lea     loop_msg,A1
+000033D0  103C 000E                433      move.b  #14,D0
+000033D4  4E4F                     434      trap    #15
+000033D6  5343                     435      sub     #1,D3   decrement loop counter
+000033D8  66F0                     436      bne     out     repeat until D0=0
+000033DA  6100 0032                437      bsr     endl
+000033DE  4E75                     438      rts
+000033E0                           439      
+000033E0                           440  clear_screen: 
+000033E0  103C 000B                441      move.b  #11,D0      clear screen
+000033E4  323C FF00                442      move.w  #$ff00,D1
+000033E8  4E4F                     443      trap    #15
+000033EA  4E75                     444      rts
+000033EC                           445  *-------------------------------------------------------
+000033EC                           446  *------------------------Replay-------------------------
+000033EC                           447  *-------------------------------------------------------
+000033EC                           448  replay:
+000033EC  6100 0020                449      bsr     endl
+000033F0  43F9 00004515            450      lea     replay_msg,A1
+000033F6  103C 000E                451      move.b  #14,D0
+000033FA  4E4F                     452      trap    #15
+000033FC                           453      
+000033FC  103C 0004                454      move.b  #4,D0
+00003400  4E4F                     455      trap    #15
+00003402                           456  
+00003402  B27C 0000                457      cmp     #exit,D1
+00003406  6700 FBFE                458      beq     end         if SR Z register contains 1 beq => Branch Equals
+0000340A  6100 FC2A                459      bsr     gameloop
+0000340E                           460  
+0000340E                           461  endl:
+0000340E  48E7 8040                462      movem.l D0/A1,-(A7)
+00003412  303C 000E                463      move    #14,D0
+00003416  43F9 00003424            464      lea     crlf,A1
+0000341C  4E4F                     465      trap    #15
+0000341E  4CDF 0201                466      movem.l (A7)+,D0/A1
+00003422  4E75                     467      rts
+00003424                           468      
+00003424                           469  *-------------------------------------------------------
+00003424                           470  *-------------------Data Delarations--------------------
+00003424                           471  *-------------------------------------------------------
+00003424                           472  
+00003424= 0D 0A 00                 473  crlf:           dc.b    $0D,$0A,0
+00003427= 2A 2A 2A 2A 2A 2A ...    474  welcome_msg:    dc.b    '************************************************************'
+00003463= 0D 0A                    475                  dc.b    $0D,$0A
+00003465= 5A 6F 72 6B 51 75 ...    476                  dc.b    'ZorkQuest: Assault on Egreth Castle'
+00003488= 0D 0A                    477                  dc.b    $0D,$0A
+0000348A= 2A 2A 2A 2A 2A 2A ...    478                  dc.b    '************************************************************'
+000034C6= 0D 0A 00                 479                  dc.b    $0D,$0A,0
+000034C9= 53 75 64 64 65 6E ...    480  opening_msg:    dc.b    'Suddenly, you awake in an unfamiliar part of the woods.'
+00003500= 0D 0A                    481                  dc.b    $0D,$0A
+00003502= 59 6F 75 72 20 66 ...    482                  dc.b    'Your friends are nowhere to be seen. All you have on your'
+0000353B= 0D 0A                    483                  dc.b    $0D,$0A
+0000353D= 70 65 72 73 6F 6E ...    484                  dc.b    'person is your sword and your bow. You hear the faint screams'
+0000357A= 0D 0A                    485                  dc.b    $0D,$0A
+0000357C= 6F 66 20 79 6F 75 ...    486                  dc.b    'of your friends, perhaps? But you cant make out if its coming'
+000035B9= 0D 0A                    487                  dc.b    $0D,$0A
+000035BB= 66 72 6F 6D 20 74 ...    488                  dc.b    'from the nearby fields or the lake.'
+000035DE= 0D 0A                    489                  dc.b    $0D,$0A
+000035E0= 31 2E 20 46 69 65 ...    490  opening_question dc.b   '1. Field     2. Lake',0
+000035F5                           491  
+000035F5= 59 6F 75 20 73 70 ...    492  field_para      dc.b    'You sprint as fast as you can towards the field as the screaming'
+00003635= 0D 0A                    493                  dc.b    $0D,$0A
+00003637= 67 65 74 73 20 6C ...    494                  dc.b    'gets louder, its a male voice. It could be the wizards apprentice'
+00003678= 0D 0A                    495                  dc.b    $0D,$0A
+0000367A= 61 73 20 79 6F 75 ...    496                  dc.b    'as you approach you see 2 hobgoblins attacking the boy'
+000036B0= 0D 0A                    497                  dc.b    $0D,$0A
+000036B2= 31 2E 20 43 68 61 ...    498                  dc.b    '1. Charge at them with your sword      2. Sneak and take them out with bow',0
+000036FD= 59 6F 75 20 73 70 ...    499  lake_para      dc.b    'You sprint as fast as you can towards the lake as the screaming'
+0000373C= 0D 0A                    500                  dc.b    $0D,$0A
+0000373E= 67 65 74 73 20 6C ...    501                  dc.b    'gets louder, its a male voice. It could be the cart driver'
+00003778= 0D 0A                    502                  dc.b    $0D,$0A
+0000377A= 61 73 20 79 6F 75 ...    503                  dc.b    'as you approach you see 2 skeletons attacking the driver'
+000037B2= 0D 0A                    504                  dc.b    $0D,$0A
+000037B4= 31 2E 20 43 68 61 ...    505                  dc.b    '1. Charge at them with your sword      2. Sneak and take them out with bow',0
+000037FF= 59 6F 75 20 63 68 ...    506  goblin_attack   dc.b    'You charge at the goblins and slice through the first with ease.'
+0000383F= 0D 0A                    507                  dc.b    $0D,$0A
+00003841= 54 68 65 20 6F 74 ...    508                  dc.b    'The other goblin slashes at you with a dagger before you cut him down'
+00003886= 0D 0A                    509                  dc.b    $0D,$0A
+00003888= 59 6F 75 20 73 61 ...    510                  dc.b    'You save the boy but you have been wounded (-10 Health)(+10 Score)',0
+000038CB= 59 6F 75 20 63 68 ...    511  skeleton_attack   dc.b   'You charge at the skeletons and slice through the first with ease.'
+0000390D= 0D 0A                    512                  dc.b    $0D,$0A
+0000390F= 54 68 65 20 6F 74 ...    513                  dc.b    'The other skeleton slashes at you with a dagger before you cut him down'
+00003956= 0D 0A                    514                  dc.b    $0D,$0A
+00003958= 59 6F 75 20 73 61 ...    515                  dc.b    'You save the boy but you have been wounded (-10 Health)(+10 Score)',0
+0000399B= 59 6F 75 20 71 75 ...    516  goblin_sneak   dc.b    'You quietly equip your bow and take the first goblin out'
+000039D3= 0D 0A                    517                  dc.b    $0D,$0A
+000039D5= 42 65 66 6F 72 65 ...    518                  dc.b    'Before the other can react, you put an arrow in its skull'
+00003A0E= 0D 0A                    519                  dc.b    $0D,$0A
+00003A10= 54 68 65 20 62 6F ...    520                  dc.b    'The boy is hurt, you take him back to the camp to regroup (+5 Score)',0
+00003A55= 59 6F 75 20 71 75 ...    521  skeleton_sneak   dc.b   'You quietly equip your bow and take the first skeleton out'
+00003A8F= 0D 0A                    522                  dc.b    $0D,$0A
+00003A91= 42 65 66 6F 72 65 ...    523                  dc.b    'Before the other can react, you put an arrow in its skull'
+00003ACA= 0D 0A                    524                  dc.b    $0D,$0A
+00003ACC= 54 68 65 20 62 6F ...    525                  dc.b    'The boy is hurt, you take him back to the camp to regroup (+5 Score)',0
+00003B11= 59 6F 75 20 72 65 ...    526  return_camp     dc.b    'You return to the camp to find everything has been ransacked but'
+00003B51= 0D 0A                    527                  dc.b    $0D,$0A
+00003B53= 65 76 65 72 79 6F ...    528                  dc.b    'everyone appears to be unscathed, nobody knows why this has happened.'
+00003B98= 0D 0A                    529                  dc.b    $0D,$0A
+00003B9A= 53 75 64 64 65 6E ...    530                  dc.b    'Suddenly there is a rumbling in the bushes, everyone turns to face the expected foe'
+00003BED= 0D 0A                    531                  dc.b    $0D,$0A
+00003BEF= 2E 2E 2E 2E 2E 2E ...    532                  dc.b    '...........'
+00003BFA= 0D 0A                    533                  dc.b    $0D,$0A
+00003BFC= 41 20 79 6F 75 6E ...    534                  dc.b    'A young girl walks out..',0
+00003C15= 53 68 65 20 61 70 ...    535  young_girl      dc.b   'She approaches you, looking frightened',0
+00003C3C                           536  young_girl_response
+00003C3C= 22 49 20 74 68 69 ...    537                  dc.b    '"I think this is for you, I found it on one of the bodies you slayed"'
+00003C81= 0D 0A                    538                  dc.b    $0D,$0A
+00003C83= 53 68 65 20 68 61 ...    539                  dc.b    'She hands you a parchment with your name and face on it, information'
+00003CC7= 0D 0A                    540                  dc.b    $0D,$0A
+00003CC9= 61 62 6F 75 74 20 ...    541                  dc.b    'about the princess that is travelling with you and a picture of'
+00003D08= 0D 0A                    542                  dc.b    $0D,$0A
+00003D0A= 74 68 65 20 61 6D ...    543                  dc.b    'the amulet that she wears',0
+00003D24= 54 68 65 20 20 6C ...    544  young_girl_leaving      dc.b   'The  little girl begins to walk away'
+00003D48= 0D 0A                    545                  dc.b    $0D,$0A
+00003D4A= 31 2E 20 4C 65 74 ...    546                  dc.b    '1. Let her leave  2. Ask her to join you, the driver, the princess,' 
+00003D8D= 0D 0A                    547                  dc.b     $0D,$0A
+00003D8F= 74 68 65 20 77 61 ...    548                  dc.b    'the warrior, the wizard and his apprentice',0 
+00003DBA= 53 68 65 20 77 61 ...    549  girlLeaves      dc.b   'She walks away into the darkness',0
+00003DDB                           550     
+00003DDB= 54 68 65 20 67 69 ...    551  girlStay      dc.b   'The girl nods her head and sits on the ground waiting for something to happen',0
+00003E29                           552  
+00003E29= 59 6F 75 20 67 6F ...    553  askWizardAndPrincess dc.b 'You go into the princesses tent where you see her crying, she tells you that'
+00003E75= 0D 0A                    554                      dc.b  $0D,$0A
+00003E77= 74 68 65 20 61 6D ...    555                      dc.b   'the amulet was passed down from her mother and shes desperate to get it back.'
+00003EC4= 0D 0A                    556                       dc.b  $0D,$0A
+00003EC6= 59 6F 75 20 74 65 ...    557                       dc.b   'You tell her you will get it back (you are infatuated with her after all)'
+00003F0F= 0D 0A                    558                        dc.b  $0D,$0A
+00003F11= 59 6F 75 20 6C 65 ...    559                        dc.b  'You leave her tent and the wizard approaches you and asks to speak in private'
+00003F5E= 0D 0A                    560                         dc.b  $0D,$0A
+00003F60= 48 65 20 74 65 6C ...    561                         dc.b 'He tells you that her amulet is the source of a great deal of magical energy'
+00003FAC= 0D 0A                    562                          dc.b  $0D,$0A
+00003FAE= 61 6E 64 20 68 65 ...    563                          dc.b 'and he believe its been taken to Egreth Castle by Evil Wizard who lives there.'
+00003FFC= 0D 0A                    564                           dc.b  $0D,$0A
+00003FFE= 22 57 65 20 6D 75 ...    565                           dc.b  '"We must retrieve the amulet, or else, we could be in grave danger"',0
+00004042= 59 6F 75 20 64 65 ...    566  moveToTown dc.b 'You decide that you and your gang will move toward Egreth Castle...'
+00004085= 0D 0A                    567                      dc.b  $0D,$0A
+00004087= 54 68 65 20 6E 65 ...    568                      dc.b   'The next day you all start moving toward Egreth Castle.'
+000040BE= 0D 0A                    569                       dc.b  $0D,$0A
+000040C0= 54 68 65 72 65 20 ...    570                       dc.b   'There is a village on the way, you stop to prepare for the attack'
+00004101= 0D 0A                    571                        dc.b  $0D,$0A
+00004103= 54 68 65 72 65 20 ...    572                        dc.b  'There is a tavern in the town, the wizard, the warrior and yourself'
+00004146= 0D 0A                    573                         dc.b  $0D,$0A
+00004148= 65 6E 74 65 72 20 ...    574                         dc.b 'enter the tavern. You ask the innkeeper about mercinaries,horses'
+00004188= 0D 0A                    575                          dc.b  $0D,$0A
+0000418A= 61 6E 64 20 77 65 ...    576                          dc.b 'and weapons. You have 300 gold between you. A horse costs 100 and a'
+000041CD= 0D 0A                    577                           dc.b  $0D,$0A
+000041CF= 6D 65 72 63 69 6E ...    578                           dc.b  'mercinary costs 100'
+000041E2= 22 48 6F 77 20 6D ...    579                           dc.b '"How many horses would you like?"',0 
+00004204= 59 6F 75 20 64 65 ...    580  mercinaries1:       dc.b    'You decide to buy two horses and 1 mercinary',0  
+00004231= 59 6F 75 20 62 75 ...    581  mercinaries2:       dc.b    'You buy a horse and two mercinaries',0 
+00004255= 59 6F 75 20 64 6F ...    582  mercinaries3:       dc.b    'You dont want a horse? You buy 3 mercinarie',0 
+00004281                           583  
+00004281= 59 6F 75 20 61 6C ...    584  leaveTown     dc.b   'You all leave the town together and hope to get to Egreth Castle by night',0
+000042CB                           585                                   
+000042CB= 46 65 65 64 20 6C ...    586  feed_msg:       dc.b    'Feed load (each horse needs at least 100 units of feed)'
+00004302= 0D 0A                    587                  dc.b    $0D,$0A
+00004304= 45 6E 74 65 72 20 ...    588                  dc.b    'Enter feed load : ',0
+00004317= 4E 75 6D 62 65 72 ...    589  horses_msg:      dc.b    'Number of horses : ',0
+0000432B= 4F 6E 65 20 54 68 ...    590  rate_msg:       dc.b    'One Third[1], Two Thirds[2], Standard Charge[3], ' 
+0000435C= 0D 0A                    591                  dc.b    $0D,$0A
+0000435E= 46 75 6C 6C 20 43 ...    592                  dc.b    'Full Charge[4], Flank Charge[5] units feed per click'
+00004392= 0D 0A                    593                  dc.b    $0D,$0A
+00004394= 45 6E 74 65 72 20 ...    594                  dc.b    'Enter Speed : ',0
+000043A3= 4D 69 73 73 69 6F ...    595  distance_msg:   dc.b    'Mission distance e.g. 40 (with 100 units of feed  '
+000043D5= 0D 0A                    596                  dc.b    $0D,$0A
+000043D7= 4F 6E 65 20 54 68 ...    597                  dc.b    'One Third speed 20 units remain for manuvouirs) horses '
+0000440E= 0D 0A                    598                  dc.b    $0D,$0A
+00004410= 48 6F 72 73 65 73 ...    599                  dc.b    'Horses without feed are lost.'
+0000442D= 0D 0A                    600                  dc.b    $0D,$0A
+0000442F= 45 6E 74 65 72 20 ...    601                  dc.b    'Enter mission distance : ',0
+00004449= 45 61 63 68 20 68 ...    602  soldiers_msg:       dc.b    'Each horses need at least 1 Knight and an Stable Hand'
+0000447E= 0D 0A                    603                  dc.b    $0D,$0A
+00004480= 6D 69 6E 69 6D 75 ...    604                  dc.b    'minimum requirement is 2 i.e. Stable Hand x 1 and Knight x 1.'
+000044BD= 0D 0A                    605                  dc.b    $0D,$0A
+000044BF= 45 6E 74 65 72 20 ...    606                  dc.b    'Enter # of soldiers : ',0
+000044D6= 41 64 64 20 47 61 ...    607  gameplay_msg:   dc.b    'Add Gameplay !',0
+000044E5= 55 70 64 61 74 65 ...    608  update_msg:     dc.b    'Update Gameplay !',0
+000044F7= 44 72 61 77 20 53 ...    609  draw_msg:       dc.b    'Draw Screen !',0
+00004505= 53 74 72 69 6B 65 ...    610  hit_msg:        dc.b    'Strike!',0
+0000450D= 4D 69 73 73 21 00        611  miss_msg:       dc.b    'Miss!',0
+00004513= 2E 00                    612  loop_msg:       dc.b    '.',0
+00004515= 45 6E 74 65 72 20 ...    613  replay_msg:     dc.b    'Enter 0 to Quit any other number to replay : ',0
+00004543= 20 53 63 6F 72 65 ...    614  hud_msg:        dc.b    ' Score : ',0
+0000454D= 20 48 65 61 6C 74 ...    615  hud_msg2:       dc.b    ' Health : ',0
+00004558                           616  
+00004558                           617  health:     ds.w    1
+0000455A                           618  score:      ds.w    1 reserve space for score
+0000455C                           619  
+0000455C                           620      end start
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+AMULETTALK          32A8
+ASKWIZARDANDPRINCESS  3E29
+BUY1MERCINARIES     32F4
+BUY2MERCINARIES     3300
+BUY3MERCINARIES     330C
+CLEAR_SCREEN        33E0
+COLLISION           3364
+COLLISION_HIT       3370
+COLLISION_MISS      337E
+CRLF                3424
+DECORATE            33C2
+DISPLAY             338C
+DISTANCE            30E2
+DISTANCE_MSG        43A3
+DRAW                307A
+DRAW_MSG            44F7
+END                 3006
+ENDL                340E
+EXIT                0
+FEED                3094
+FEED_MSG            42CB
+FIELD               3172
+FIELD_PARA          35F5
+GAME                3000
+GAMELOOP            3036
+GAMEPLAY            3116
+GAMEPLAY_MSG        44D6
+GIRLLEAVES          3DBA
+GIRLSTAY            3DDB
+GOBLINATTACK        31BE
+GOBLINSNEAK         31DA
+GOBLIN_ATTACK       37FF
+GOBLIN_SNEAK        399B
+HEALTH              4558
+HIT_MSG             4505
+HIT_POINT           5
+HORSES              30AE
+HORSES_MSG          4317
+HUD                 332E
+HUD_MSG             4543
+HUD_MSG2            454D
+INPUT               3020
+LAKE                3198
+LAKE_PARA           36FD
+LEAVE               3278
+LEAVESHOP           3318
+LEAVETOWN           4281
+LITTLEGIRL          325A
+LOOP                33AE
+LOOP_MSG            4513
+MAX_CHARGE          5
+MAX_HORSES          9
+MERCINARIES1        4204
+MERCINARIES2        4231
+MERCINARIES3        4255
+MINE_LOC            64
+MIN_CHARGE          1
+MIN_FEED            64
+MIN_HORSES          1
+MIN_SOLDIER         6
+MISS_MSG            450D
+MISS_POINT          8
+MOVETOTOWN          4042
+NEXT                33B2
+OPENING             313C
+OPENING_MSG         34C9
+OPENING_QUESTION    35E0
+OUT                 33CA
+RATE                30C8
+RATE_MSG            432B
+REPLAY              33EC
+REPLAY_MSG          4515
+RETURNTOCAMP        3222
+RETURN_CAMP         3B11
+SCORE               455A
+SKELETONATTACK      31F0
+SKELETONSNEAK       320C
+SKELETON_ATTACK     38CB
+SKELETON_SNEAK      3A55
+SOLDIERS            30FC
+SOLDIERS_MSG        4449
+START               1000
+STAY                3290
+TOWN                32C0
+UPDATE              3060
+UPDATE_MSG          44E5
+USER                33A8
+WELCOME             300A
+WELCOME_MSG         3427
+YOUNG_GIRL          3C15
+YOUNG_GIRL_LEAVING  3D24
+YOUNG_GIRL_RESPONSE  3C3C
